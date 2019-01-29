@@ -5,12 +5,31 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Page Title</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- <link rel="stylesheet" type="text/css" media="screen" href="main.css" /> -->
+    <link rel="stylesheet" type="text/css" media="screen" href="./css/main.css" />
     <script src="./js/scriptures.js"></script>
 </head>
 <body>
     <div id='header'></div>
+        <h1>The Scriptures, Mapped</h1>
     <div id='navigator'></div>
     <div id='map'></div>
+    <script type="text/javascript">
+        function ready(eventHandler) {
+            "use strict";
+
+            if (document.attachEvent
+                    ? document.readyState === "complete"
+                    : document.readyState !== "loading") {
+                eventHandler();
+            } else {
+                document.addEventListener("DOMContentLoaded", eventHandler);
+            }
+        }
+
+        ready(function () {
+            scriptures.init(function () { console.log("Initizialized"); });
+            window.addEventListener("hashchange", scriptures.onHashChanged);
+        });
+    </script>
 </body>
 </html>
