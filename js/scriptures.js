@@ -121,9 +121,25 @@ const scriptures = (function () {
     }
 
     navigateHome = function (volumeId) {
-        document.querySelector("#scriptures").innerHTML = 
-        "<div>The Old Testament</div><div>The New Testament</div><div>The Book of Mormon</div>" +
-        "<div>Doctrine and Covenants</div><div>The Pearl of Great Price</div>" + volumeId;
+        let navContents = "<div id='scriptNav'>";
+        volumes.forEach(volume => {
+            if (volumeId === undefined || volumeId === volume.id) {
+                navContents += `<div class='volume'>
+                                <a name='v${volume.id} />
+                                <h5>${volume.fullName}</h5>
+                                <div class='books'>`;
+                volume.books.forEach(book => {
+                    navContents += `<a class='btn' id='${book.id}' href='#${volume.id}:${book.id}'>${book.gridName}</a>`;
+                });
+                navContents += `</div>`;
+            }
+            
+        });
+        navContents += "<br /><br /></div>"
+        document.querySelector('#scriptures').innerHTML = navContents;
+        // document.querySelector("#scriptures").innerHTML = 
+        // "<div>The Old Testament</div><div>The New Testament</div><div>The Book of Mormon</div>" +
+        // "<div>Doctrine and Covenants</div><div>The Pearl of Great Price</div>" + volumeId;
     };
 
     onHashChanged = function () {
@@ -173,7 +189,8 @@ const scriptures = (function () {
     */
 
     return {
-        init
+        init,
+        onHashChanged
     }
 
 }());
