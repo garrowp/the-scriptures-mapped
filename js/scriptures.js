@@ -7,6 +7,15 @@
                 IS 542, Winter 2019, Byu.
 *
 */
+/*property
+    forEach, onerror, onload, open, parse, responseText, send, status
+*/
+
+/*global console */
+/*jslint
+    browser: true
+    long: true
+*/
 
 const scriptures = (function () {
     "use strict";
@@ -27,6 +36,8 @@ const scriptures = (function () {
    let ajax;
    let cacheBooks;
    let init;
+   let navigateBook;
+   let navigateBookChapter;
    let navigateHome;
    let onHashChanged;
 
@@ -37,17 +48,17 @@ const scriptures = (function () {
     ajax = function (url, successCallback, failureCallback) {
         let request = new XMLHttpRequest();
 
-        request.open('GET', url, true);
+        request.open("GET", url, true);
 
         request.onload = function() {
             if (request.status >= 200 && request.status < 400) {
                 let data = JSON.parse(request.responseText);
 
-                if (typeof successCallback === 'function') {
+                if (typeof successCallback === "function") {
                     successCallback(data);
                 }
             } else {
-                if (typeof failureCallback === 'function') {
+                if (typeof failureCallback === "function") {
                     failureCallback(request);
                 }
             }
@@ -70,7 +81,7 @@ const scriptures = (function () {
             volume.books = volumeBooks;
         });
 
-        if (typeof callback === 'function') {
+        if (typeof callback === "function") {
             callback();
         }
     };
@@ -100,6 +111,14 @@ const scriptures = (function () {
             }
         );
     };
+
+    navigateBook = function (bookId) {
+        console.log("book");
+    }
+
+    navigateBookChapter = function(bookId, chapter) {
+        console.log("book chapter");
+    }
 
     navigateHome = function (volumeId) {
         document.querySelector("#scriptures").innerHTML = 
@@ -133,7 +152,7 @@ const scriptures = (function () {
                 navigateBook(bookId);
             }
         } else {
-
+            navigateBookChapter(bookId);
         }
 
         /*
