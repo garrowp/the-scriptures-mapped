@@ -23,37 +23,58 @@ const scriptures = (function () {
     /*---------------------------------------------------------------
     *                       CONSTANTS
     */
+   const LAT_LON_PARSER = /\((.*),'(.*)',(.*),(.*),(.*),(.*),(.*),(.*),(.*),(.*),'(.*)'\)/;
+   const SCRIPTURES_URL = "https://scriptures.byu.edu/mapscrip/mapgetscrip.php";
 
     /*---------------------------------------------------------------
     *                       PRIVATE VARIABLES
     */
     let books;
+    let gmMarkers = [];
     let volumes;
 
     /*---------------------------------------------------------------
     *                       PRIVATE METHOD DECLARATIONS
     */
+   let addMarker;
    let ajax;
    let bookChapterValid;
    let cacheBooks;
+   let clearMarkers;
+   let encodedScriptureUrlParameters;
+   let getScriptureCallback;
+   let getScriptureFailed;
    let init;
    let navigateBook;
    let navigateChapter;
    let navigateHome;
+   let nextChapter;
    let onHashChanged;
+   let previousChapter;
+   let setupMarkers;
+   let titleForBookChapter;
 
     /*---------------------------------------------------------------
     *                       PRIVATE METHODS
     */
 
-    ajax = function (url, successCallback, failureCallback) {
+    addMarker = function (placename, latitude, longitude) {
+      // NEEDS WORK: check to see if we already have this lat/long
+      //    in gmMarkers. If so, merge this new placename
+      // NEEDSWORK: create the marker and append it to gmMarkers;
+    };
+
+    ajax = function (url, successCallback, failureCallback, skipParse) {
         let request = new XMLHttpRequest();
 
         request.open("GET", url, true);
 
         request.onload = function() {
             if (request.status >= 200 && request.status < 400) {
-                let data = JSON.parse(request.responseText);
+                let data = skipParse ? request.responseText : JSON.parse(request.responseText);
+                
+                
+                // JSON.parse(request.responseText);
 
                 if (typeof successCallback === "function") {
                     successCallback(data);
@@ -99,6 +120,40 @@ const scriptures = (function () {
         if (typeof callback === "function") {
             callback();
         }
+    };
+
+    clearMarkers = function () {
+        gmMarkers.forEach(marker => {
+            marker.setMap(null);
+        });
+
+        gmMarkers = [];
+    };
+
+    encodedScriptureUrlParameters = function(bookId, chapter, verses, isJst) {
+        if (bookId !== undefined && chapter !== undefined) {
+            let options = "";
+
+            if (verses !== undefined) {
+                options += verses;
+            }
+
+            if (isJst !== undefined && isJst) {
+                options += '&jst=JST';
+            }
+
+            return `${SCRIPTURES_URL}?book=${bookId}&chap=${chapter}&verses${options}`;
+        }
+    };
+
+    getScriptureCallback = function (chapterHTML) {
+        document.querySelector('#scriptures').innerHTML = chapterHTML;
+        // NEEDSWORK: set up the map markers
+        setupMarkers();
+    };
+
+    getScriptureFailed = function() {
+        console.log("Warning: unable to receive scripture content from server.");
     };
 
     init = function (callback) {
@@ -157,11 +212,15 @@ const scriptures = (function () {
             let book = books[bookId];
             let volume = volumes[book.parentBookId - 1];
 
+            // console.log(nextChapter(bookId, chapter));
+
+            ajax(encodedScriptureUrlParameters(bookId, chapter),
+                    getScriptureCallback, getScriptureFailed, true);
             // ajax()
 
-            document.querySelector('#scriptures').innerHTML = `<div>Chapter ${chapter}</div>`;
+            // document.querySelector('#scriptures').innerHTML = `<div>Chapter ${chapter}</div>`;
         }
-        console.log("book chapter");
+        // console.log("book chapter");
     }
 
     navigateHome = function (volumeId) {
@@ -185,6 +244,49 @@ const scriptures = (function () {
         // "<div>The Old Testament</div><div>The New Testament</div><div>The Book of Mormon</div>" +
         // "<div>Doctrine and Covenants</div><div>The Pearl of Great Price</div>" + volumeId;
     };
+
+    // Book ID and chapter must be integers
+    // Returns undefined if there is no next chapter
+    // Otherwise returns an array with the next book ID, chapter, and title
+    nextChapter = function(bookId, chapter) {
+        let book = books[bookId];
+
+        if (book !== undefined) {
+            if (chapter < book.numChapters) {
+                return [bookId, chapter + 1, titleForBookChapter(book, chapter + 1)];
+            }
+
+            let nextBook = books[bookId + 1];
+
+            if (nextBook !== undefined) {
+                let nextChapterValue = 0;
+
+                if (nextBook.numChapters > 0) {
+                    nextChapterValue = 1;
+                }
+
+                return [
+                    nextBook.id,
+                    nextChapterValue,
+                    titleForBookChapter(nextBook, nextChapterValue)
+                ];
+            }
+        }
+        /*
+         * Get the book for the given bookId. If it's not undefined
+         *      If chapter < max for this book, it's the easy case. Just return
+         *          same bookId, chapter + 1, and the title string for that
+         *          book/chapter combo
+         *      otherwise we need to see if there's a next book:
+         *          Get the book for bookId + 1. If it's no undefined:
+         *              Check whether that next book has 0 chapters or > 0.
+         *              If 0, return next book ID, 0, and the corresponding title string
+         *              Else return next Book ID, 1, and the corresponding title string.
+         *  If we didn't already return a 3-element array of bookId/chatper/title,
+         *      at this point just drop through to the bottom of the function. We'll
+         *      return undefined by default, meaning there is no next chapter
+        */
+    }
 
     onHashChanged = function () {
         let ids = [];
@@ -222,6 +324,55 @@ const scriptures = (function () {
                 }
             }
         }
+    };
+
+    // Book Id and chapter must be integers
+    // Returns undefined if there is no previous chapter
+    // Otherwise returns an array with the next book ID, chapter, and title
+    previousChapter = function (bookId, chapter) {
+        /*
+         * Get the book for the given bookId. If it's not undefined:
+         *  If chapter > 1, it's the easy case. Just return same bookId,
+         *      chapter - , and the title string for that book/chapter combo
+         *  Otherwise we need to see if there's a previous book:
+         *      Get the book for bookId - 1. If it's not undefinied:
+         *          Return bookId - 1, the last chapter of that book, and the
+         *              title string for that book/chapter combo
+         * If we didn't already return a 3-element array of bookId/chapter/title,
+         *      at this point just drop through to the boom of the function. We'll
+         *      return undefinied by default meaning there is no previous chapter.
+        */
+    };
+
+    setupMarkers = function () {
+        if (gmMarkers.length > 0) {
+            clearMarkers();
+        }
+
+        document.querySelectorAll('a[onclick="showLocation("]').forEach(el => {
+            let matches = LAT_LON_PARSER.exec(el.getAttribute("onclick"));
+
+            if (matches) {
+                let placename = matches[2];
+                let latitude = matches[3];
+                let longitude = matches[4];
+                let flag = matches [11];
+
+                if  (flag !== "") {
+                    placename += " " + flag;
+                }
+
+                addMarker(placename, latitude, longitude);
+            }
+        });
+    };
+
+    titleForBookChapter = function (book, chapter) {
+        if (chapter > 0){
+            return `${book.tocName} ${chapter}`;
+        }
+
+        return book.tocName;
     };
 
     /*---------------------------------------------------------------

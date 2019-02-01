@@ -21,6 +21,15 @@
         <div id='map'></div>
     </div>
     <script type="text/javascript">
+        let map;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: {lat: 31.0461, lng: 34.8516},
+                zoom: 8
+            });
+        }
+
         function ready(eventHandler) {
             "use strict";
 
@@ -38,5 +47,7 @@
             window.addEventListener("hashchange", scriptures.onHashChanged);
         });
     </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBKp428JLTtBGa7WpB-iTxs3O9Ap2eKYBc&callback=initMap"
+    async defer></script>
 </body>
 </html>
