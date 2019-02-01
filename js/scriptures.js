@@ -23,7 +23,12 @@ const scriptures = (function () {
     /*---------------------------------------------------------------
     *                       CONSTANTS
     */
+   const INDEX_PLACENAME = 2;
+   const INDEX_LATITUDE = 3;
+   const INDEX_LONGITUDE = 4;
+   const INDEX_PLACE_FLAG = 11;
    const LAT_LON_PARSER = /\((.*),'(.*)',(.*),(.*),(.*),(.*),(.*),(.*),(.*),(.*),'(.*)'\)/;
+   const MAX_RETRY_DELAY = 5000;
    const SCRIPTURES_URL = "https://scriptures.byu.edu/mapscrip/mapgetscrip.php";
 
     /*---------------------------------------------------------------
@@ -31,6 +36,7 @@ const scriptures = (function () {
     */
     let books;
     let gmMarkers = [];
+    let retryDelay = 500;
     let volumes;
 
     /*---------------------------------------------------------------
@@ -62,6 +68,15 @@ const scriptures = (function () {
       // NEEDS WORK: check to see if we already have this lat/long
       //    in gmMarkers. If so, merge this new placename
       // NEEDSWORK: create the marker and append it to gmMarkers;
+
+        let marker = new google.maps.Marker({
+            position: {lat: latitude, lng: longitude},
+            map: map,
+            title: placename,
+            animation: google.maps.Animation.DROP
+        });
+
+        gmMarkers.push(marker);
     };
 
     ajax = function (url, successCallback, failureCallback, skipParse) {
@@ -345,18 +360,30 @@ const scriptures = (function () {
     };
 
     setupMarkers = function () {
+        if (window.google === undefined) {
+            // retry fater delay
+            let retryId = window.setTimeout(setupMarkers, retryDelay);
+
+            retryDelay += retryDelay;
+            if (retryDelay > MAX_RETRY_DELAY) {
+                window.clearTimeout(retryId);
+            }
+
+            return;
+        }
+
         if (gmMarkers.length > 0) {
             clearMarkers();
         }
 
-        document.querySelectorAll('a[onclick="showLocation("]').forEach(el => {
+        document.querySelectorAll('a[onclick^="showLocation("]').forEach(el => {
             let matches = LAT_LON_PARSER.exec(el.getAttribute("onclick"));
 
             if (matches) {
-                let placename = matches[2];
-                let latitude = matches[3];
-                let longitude = matches[4];
-                let flag = matches [11];
+                let placename = matches[INDEX_PLACENAME];
+                let latitude = parseFloat(matches[INDEX_LATITUDE]);
+                let longitude = parseFloat(matches[INDEX_LONGITUDE]);
+                let flag = matches [INDEX_PLACE_FLAG];
 
                 if  (flag !== "") {
                     placename += " " + flag;
