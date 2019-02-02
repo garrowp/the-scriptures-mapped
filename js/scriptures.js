@@ -29,6 +29,9 @@ const scriptures = (function () {
    const INDEX_PLACE_FLAG = 11;
    const LAT_LON_PARSER = /\((.*),'(.*)',(.*),(.*),(.*),(.*),(.*),(.*),(.*),(.*),'(.*)'\)/;
    const MAX_RETRY_DELAY = 5000;
+   const REQUEST_GET = "GET";
+   const REQUEST_STATUS_OK = 200;
+   const REQUEST_STATUS_ERROR = 400;
    const SCRIPTURES_URL = "https://scriptures.byu.edu/mapscrip/mapgetscrip.php";
 
     /*---------------------------------------------------------------
@@ -82,10 +85,10 @@ const scriptures = (function () {
     ajax = function (url, successCallback, failureCallback, skipParse) {
         let request = new XMLHttpRequest();
 
-        request.open("GET", url, true);
+        request.open(REQUEST_GET, url, true);
 
         request.onload = function() {
-            if (request.status >= 200 && request.status < 400) {
+            if (request.status >= REQUEST_STATUS_OK && request.status < REQUEST_STATUS_ERROR) {
                 let data = skipParse ? request.responseText : JSON.parse(request.responseText);
                 
                 
@@ -198,8 +201,31 @@ const scriptures = (function () {
     };
 
     navigateBook = function (bookId) {
-        document.getElementById('scriptures').innerHTML = `<div>${bookId}</div>`;
+        // document.getElementById('scriptures').innerHTML = `<div>${bookId}</div>`;
+        
+        let book = books[bookId];
 
+        if (book.numChapters === 0 ) {
+            navigateChapter(bookId, 0);
+        } else if (book.numChapters === 1) {
+            navigateChapter(bookId, 1);
+        } else {
+            let content = `<div id="scripnav">
+                                <div class='volume'>
+                                    <h5>${book.fullName}</h5>
+                                </div>
+                                <div class='books'>`;
+
+            for (let i = 0; i < book.numChapters; i++) {
+                content += `<a class='btn chapter' id=${i} href='#${book.parentBookId}:${bookId}:${i + 1}'>${i}</a>`;
+            }
+
+            content += '</div></div>';
+            document.getElementById('scriptures').innerHTML = content;
+        }
+
+        
+        
         /*
          * NEEDSWORK: generate HTML that looks like this (to use Liddle's style.css):
          *
@@ -219,7 +245,8 @@ const scriptures = (function () {
          * 3. Else if the book has exactly one chapter, call navigateChapter() for that book ID and chapter 1
          * 4. Else generate HTML to match the example above
         */
-        console.log("book");
+
+        
     }
 
     navigateChapter = function(bookId, chapter) {
@@ -275,7 +302,6 @@ const scriptures = (function () {
 
             if (nextBook !== undefined) {
                 let nextChapterValue = 0;
-
                 if (nextBook.numChapters > 0) {
                     nextChapterValue = 1;
                 }
@@ -345,6 +371,27 @@ const scriptures = (function () {
     // Returns undefined if there is no previous chapter
     // Otherwise returns an array with the next book ID, chapter, and title
     previousChapter = function (bookId, chapter) {
+        let book = books[bookId];
+
+        if (book !== undefined) {
+            if (chapter > 1) {
+                return [
+                    bookId,
+                    chapter - 1,
+                    titleForBookChapter(book, chapter - 1)
+                ];
+            } else {
+                let prevBook = books[bookId - 1];
+
+                if (prevBook !== undefined) {
+                    return [
+                        prevBook.id,
+                        prevBook.numChapters,
+                        titleForBookChapter(prevBook, prevBook.numChapters)
+                    ]
+                }
+            }
+        }
         /*
          * Get the book for the given bookId. If it's not undefined:
          *  If chapter > 1, it's the easy case. Just return same bookId,
@@ -392,6 +439,13 @@ const scriptures = (function () {
                 addMarker(placename, latitude, longitude);
             }
         });
+
+        let bounds = new google.maps.LatLngBounds();
+        gmMarkers.forEach(marker => {
+            bounds.extend(marker.getPosition());
+        });
+
+        map.fitBounds(bounds);
     };
 
     titleForBookChapter = function (book, chapter) {

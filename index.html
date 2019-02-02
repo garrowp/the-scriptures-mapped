@@ -43,8 +43,10 @@
         }
 
         ready(function () {
-            scriptures.init(function () { console.log("Initizialized"); });
-            window.addEventListener("hashchange", scriptures.onHashChanged);
+            scriptures.init(function () {
+                window.addEventListener("hashchange", scriptures.onHashChanged);
+                scriptures.onHashChanged();
+            });
         });
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBKp428JLTtBGa7WpB-iTxs3O9Ap2eKYBc&callback=initMap"
