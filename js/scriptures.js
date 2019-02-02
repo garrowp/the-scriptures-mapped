@@ -63,6 +63,7 @@ const scriptures = (function () {
    let previousChapter;
    let setupBounds;
    let setupMarkers;
+   let showLocation;
    let titleForBookChapter;
 
     /*---------------------------------------------------------------
@@ -237,7 +238,7 @@ const scriptures = (function () {
                                 <div class='books'>`;
 
             for (let i = 0; i < book.numChapters; i++) {
-                content += `<a class='btn chapter' id=${i} href='#${book.parentBookId}:${bookId}:${i + 1}'>${i}</a>`;
+                content += `<a class='btn chapter' id=${i} href='#${book.parentBookId}:${bookId}:${i + 1}'>${i + 1}</a>`;
             }
 
             content += '</div></div>';
@@ -311,8 +312,9 @@ const scriptures = (function () {
         volumes.forEach(volume => {
             if (volumeId === undefined || volumeId === volume.id) {
                 navContents += `<div class='volume'>
-                                <a name='v${volume.id}' />
-                                <h5>${volume.fullName}</h5>
+                                <a name='v${volume.id}' >
+                                    <h5>${volume.fullName}</h5>
+                                </a>
                                 <div class='books'>`;
                 volume.books.forEach(book => {
                     navContents += `<a class='btn' id='${book.id}' href='#${volume.id}:${book.id}'>${book.gridName}</a>`;
@@ -519,6 +521,21 @@ const scriptures = (function () {
         setupBounds();
     };
 
+    showLocation = function (geotagId, placename, latitude, longitude, viewLatitude, viewLongitude, viewTilt, viewRoll, viewAltitude, viewHeading) {
+        gmMarkers.forEach(marker => {
+            let myLatLng = new google.maps.LatLng(latitude, longitude);
+
+            if (marker.position.lat() === myLatLng.lat() && marker.position.lng() === myLatLng.lng()) {
+                let zoom = Math.round(Number(viewAltitude) / 450);
+                6 > zoom ? zoom = 6 : 18 < zoom && (zoom = 18);
+                // b = Math.round(Number(a[9]) / 450),
+                // 6 > b ? b = 6 : 18 < b && (b = 18),
+                map.setZoom(zoom);
+                map.panTo(marker.position);
+            }
+        });
+    }
+
     titleForBookChapter = function (book, chapter) {
         if (chapter > 0){
             return `${book.tocName} ${chapter}`;
@@ -533,7 +550,8 @@ const scriptures = (function () {
 
     return {
         init,
-        onHashChanged
+        onHashChanged,
+        showLocation
     }
 
 }());
