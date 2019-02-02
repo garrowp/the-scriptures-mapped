@@ -49,6 +49,7 @@ const scriptures = (function () {
    let ajax;
    let bookChapterValid;
    let cacheBooks;
+   let changeHash;
    let clearMarkers;
    let encodedScriptureUrlParameters;
    let getScriptureCallback;
@@ -273,6 +274,27 @@ const scriptures = (function () {
             let book = books[bookId];
             let volume = volumes[book.parentBookId - 1];
 
+            document.querySelector('#navButtons').innerHTML = `<button id='prev'>Prev</button><button id='next'>Next</button`;
+
+            
+            document.querySelector('#next').addEventListener('click', () => {
+                let next = nextChapter(bookId, chapter);
+                if (next !== undefined) {
+                    location.hash = `#${next[0]}:${next[1]}:${next[2]}`;
+                } else {
+                    navigateHome();
+                }
+            });
+
+            document.querySelector('#prev').addEventListener('click', () => {
+                let prev = previousChapter(bookId, chapter);
+                if (prev !== undefined) {
+                    location.hash = `#${prev[0]}:${prev[1]}:${prev[2]}`;
+                } else {
+                    navigateHome();
+                }
+            });
+
             // console.log(nextChapter(bookId, chapter));
 
             ajax(encodedScriptureUrlParameters(bookId, chapter),
@@ -314,7 +336,12 @@ const scriptures = (function () {
 
         if (book !== undefined) {
             if (chapter < book.numChapters) {
-                return [bookId, chapter + 1, titleForBookChapter(book, chapter + 1)];
+                return [
+                    book.parentBookId,
+                    bookId,
+                    chapter + 1,
+                    titleForBookChapter(book, chapter + 1)
+                ];
             }
 
             let nextBook = books[bookId + 1];
@@ -326,6 +353,7 @@ const scriptures = (function () {
                 }
 
                 return [
+                    nextBook.parentBookId,
                     nextBook.id,
                     nextChapterValue,
                     titleForBookChapter(nextBook, nextChapterValue)
@@ -395,6 +423,7 @@ const scriptures = (function () {
         if (book !== undefined) {
             if (chapter > 1) {
                 return [
+                    book.parentBookId,
                     bookId,
                     chapter - 1,
                     titleForBookChapter(book, chapter - 1)
@@ -404,6 +433,7 @@ const scriptures = (function () {
 
                 if (prevBook !== undefined) {
                     return [
+                        prevBook.parentBookId,
                         prevBook.id,
                         prevBook.numChapters,
                         titleForBookChapter(prevBook, prevBook.numChapters)
