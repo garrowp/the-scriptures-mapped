@@ -70,6 +70,8 @@ const scriptures = (function () {
     addMarker = function (placename, latitude, longitude) {
       // NEEDS WORK: check to see if we already have this lat/long
       //    in gmMarkers. If so, merge this new placename
+        
+
       // NEEDSWORK: create the marker and append it to gmMarkers;
 
         let marker = new google.maps.Marker({
@@ -406,6 +408,31 @@ const scriptures = (function () {
         */
     };
 
+    setupBounds = function () {
+        if (gmMarkers.length === 0) {
+            map.setZoom(8);
+            map.panTo({lat: 31.777444, lng: 35.234935});
+        }
+
+        if(gmMarkers.length === 1) {
+            map.setZoom(8);
+            map.panTo(gmMarkers[0].position);
+        }        
+
+        if (gmMarkers.length > 1) {
+
+            let bounds = new google.maps.LatLngBounds();
+            gmMarkers.forEach(marker => {
+                bounds.extend(marker.getPosition());
+            });
+
+            map.fitBounds(bounds);
+
+            // The code above was adapted by code from: https://stackoverflow.com/questions/19304574/center-set-zoom-of-map-to-cover-all-visible-markers
+            // Submitted by user: https://stackoverflow.com/users/954940/adam
+        }
+    }
+
     setupMarkers = function () {
         if (window.google === undefined) {
             // retry fater delay
@@ -439,13 +466,6 @@ const scriptures = (function () {
                 addMarker(placename, latitude, longitude);
             }
         });
-
-        let bounds = new google.maps.LatLngBounds();
-        gmMarkers.forEach(marker => {
-            bounds.extend(marker.getPosition());
-        });
-
-        map.fitBounds(bounds);
     };
 
     titleForBookChapter = function (book, chapter) {
