@@ -60,6 +60,7 @@ const scriptures = (function () {
    let nextChapter;
    let onHashChanged;
    let previousChapter;
+   let setupBounds;
    let setupMarkers;
    let titleForBookChapter;
 
@@ -70,18 +71,34 @@ const scriptures = (function () {
     addMarker = function (placename, latitude, longitude) {
       // NEEDS WORK: check to see if we already have this lat/long
       //    in gmMarkers. If so, merge this new placename
-        
+        let duplicates = false;
+        let myLatLng = new google.maps.LatLng(latitude, longitude);
 
-      // NEEDSWORK: create the marker and append it to gmMarkers;
-
-        let marker = new google.maps.Marker({
-            position: {lat: latitude, lng: longitude},
-            map: map,
-            title: placename,
-            animation: google.maps.Animation.DROP
+        gmMarkers.forEach(marker => {
+            if (marker.position.lat() === myLatLng.lat() && marker.position.lng() === myLatLng.lng()) {
+                if (!marker.title.includes(placename)) {
+                    marker.title += `, ${placename}`;
+                }
+                duplicates = true;
+            }
         });
 
-        gmMarkers.push(marker);
+        if (!duplicates) {
+            // NEEDSWORK: create the marker and append it to gmMarkers;
+
+            let marker = new google.maps.Marker({
+                position: {lat: latitude, lng: longitude},
+                map: map,
+                title: placename,
+                animation: google.maps.Animation.DROP
+            });
+
+            // console.log(gmMarkers);
+
+            gmMarkers.push(marker);
+        }
+
+      
     };
 
     ajax = function (url, successCallback, failureCallback, skipParse) {
@@ -466,6 +483,10 @@ const scriptures = (function () {
                 addMarker(placename, latitude, longitude);
             }
         });
+
+        console.log(gmMarkers);
+
+        setupBounds();
     };
 
     titleForBookChapter = function (book, chapter) {
