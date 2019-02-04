@@ -29,6 +29,7 @@ const scriptures = (function () {
    const INDEX_PLACE_FLAG = 11;
    const LAT_LON_PARSER = /\((.*),'(.*)',(.*),(.*),(.*),(.*),(.*),(.*),(.*),(.*),'(.*)'\)/;
    const MAX_RETRY_DELAY = 5000;
+//    const NAV_BUTTONS = document.createElement(`<div id='navButtons'></div>`);
    const REQUEST_GET = "GET";
    const REQUEST_STATUS_OK = 200;
    const REQUEST_STATUS_ERROR = 400;
@@ -92,6 +93,12 @@ const scriptures = (function () {
                 position: {lat: latitude, lng: longitude},
                 map: map,
                 title: placename,
+                label: {
+                    color: '#201000',
+                    strokeColor: '#fff8f0',
+                    fontWeight: 'bold',
+                    text: placename
+                  },
                 animation: google.maps.Animation.DROP
             });
 
@@ -107,13 +114,10 @@ const scriptures = (function () {
         let request = new XMLHttpRequest();
 
         request.open(REQUEST_GET, url, true);
-
         request.onload = function() {
             if (request.status >= REQUEST_STATUS_OK && request.status < REQUEST_STATUS_ERROR) {
+                
                 let data = skipParse ? request.responseText : JSON.parse(request.responseText);
-                
-                
-                // JSON.parse(request.responseText);
 
                 if (typeof successCallback === "function") {
                     successCallback(data);
@@ -170,6 +174,7 @@ const scriptures = (function () {
     };
 
     encodedScriptureUrlParameters = function(bookId, chapter, verses, isJst) {
+        // console.log('encoded');
         if (bookId !== undefined && chapter !== undefined) {
             let options = "";
 
@@ -187,7 +192,6 @@ const scriptures = (function () {
 
     getScriptureCallback = function (chapterHTML) {
         document.querySelector('#scriptures').innerHTML = chapterHTML;
-        // NEEDSWORK: set up the map markers
         setupMarkers();
     };
 
@@ -243,31 +247,7 @@ const scriptures = (function () {
 
             content += '</div></div>';
             document.getElementById('scriptures').innerHTML = content;
-        }
-
-        
-        
-        /*
-         * NEEDSWORK: generate HTML that looks like this (to use Liddle's style.css):
-         *
-         *  <div id="scripnav">
-         *      <div class="volumen"><h5>book.fullName</h5></div>
-         *      <a class='btn chapter' id='1' href='#0:bookid:1'>1</a>
-         *      <a class='btn chapter' id='2' href='#0:bookid:2'>2</a>
-         *      ...
-         *      <a class='btn chapter' id='49' href='#0:bookid:49'>49</a>
-         *      <a class='btn chapter' id='50' href='#0:bookid:50'>50</a>
-         * 
-         * (plug in the right strings for book.fullName and bookId in the example above)
-         * 
-         * Logic for this method:
-         * 1. Get the book for the given bookId
-         * 2. If the book has no numbered chapters, call navigateChapter() for that bookId and chapter 0
-         * 3. Else if the book has exactly one chapter, call navigateChapter() for that book ID and chapter 1
-         * 4. Else generate HTML to match the example above
-        */
-
-        
+        }        
     }
 
     navigateChapter = function(bookId, chapter) {
@@ -275,9 +255,21 @@ const scriptures = (function () {
             let book = books[bookId];
             let volume = volumes[book.parentBookId - 1];
 
-            document.querySelector('#navButtons').innerHTML = `<button id='prev'>Prev</button><button id='next'>Next</button`;
+            ajax(encodedScriptureUrlParameters(bookId, chapter),
+                    getScriptureCallback, getScriptureFailed, true);
 
             
+            document.querySelector('#navButtons').innerHTML = `<div id='prev'>
+                                                                    <i class="material-icons">
+                                                                    navigate_before
+                                                                    </i>
+                                                               </div>
+                                                               <div id='next'>
+                                                                    <i class="material-icons">
+                                                                    navigate_next
+                                                                    </i>
+                                                               </div>`;
+
             document.querySelector('#next').addEventListener('click', () => {
                 let next = nextChapter(bookId, chapter);
                 if (next !== undefined) {
@@ -286,7 +278,7 @@ const scriptures = (function () {
                     navigateHome();
                 }
             });
-
+    
             document.querySelector('#prev').addEventListener('click', () => {
                 let prev = previousChapter(bookId, chapter);
                 if (prev !== undefined) {
@@ -295,16 +287,9 @@ const scriptures = (function () {
                     navigateHome();
                 }
             });
-
-            // console.log(nextChapter(bookId, chapter));
-
-            ajax(encodedScriptureUrlParameters(bookId, chapter),
-                    getScriptureCallback, getScriptureFailed, true);
-            // ajax()
-
-            // document.querySelector('#scriptures').innerHTML = `<div>Chapter ${chapter}</div>`;
         }
-        // console.log("book chapter");
+
+        
     }
 
     navigateHome = function (volumeId) {
@@ -469,7 +454,6 @@ const scriptures = (function () {
         }        
 
         if (gmMarkers.length > 1) {
-
             let bounds = new google.maps.LatLngBounds();
             gmMarkers.forEach(marker => {
                 bounds.extend(marker.getPosition());
@@ -516,7 +500,7 @@ const scriptures = (function () {
             }
         });
 
-        console.log(gmMarkers);
+        // console.log(gmMarkers);
 
         setupBounds();
     };
@@ -528,6 +512,12 @@ const scriptures = (function () {
             if (marker.position.lat() === myLatLng.lat() && marker.position.lng() === myLatLng.lng()) {
                 let zoom = Math.round(Number(viewAltitude) / 450);
                 6 > zoom ? zoom = 6 : 18 < zoom && (zoom = 18);
+
+                // if (zoom < 6) {
+                //     zoom = 6;
+                // } else if (zoom > 18) {
+                //     zoom = 18;
+                // }
                 // b = Math.round(Number(a[9]) / 450),
                 // 6 > b ? b = 6 : 18 < b && (b = 18),
                 map.setZoom(zoom);

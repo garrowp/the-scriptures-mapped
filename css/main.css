@@ -77,7 +77,7 @@ div.subtitle {
 }
 
 #scriptures {
-    min-width: 220px;
+    min-width: 350px;
     max-width: 440px;
     flex: 1 1 30%;
     height: 100%;
@@ -270,4 +270,23 @@ span.verse {
 
 li.match {
     background-color: #ffffcc;
+}
+
+#navButtons {
+    display: flex;
+    background-color: #fff;
+    border-right: 1px solid #aaa;
+    justify-content: space-between;
+}
+
+#navButtons div {
+    width: 50%;
+}
+
+#prev, #next {
+    cursor: pointer;
+}
+
+#next i  {
+    float: right;
 }
